@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="app-version" content="3.3.0">
+<meta name="app-version" content="3.4.0">
 <title>نظام حوالات</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 rx=%229%22 fill=%22%230a2a36%22/%3E%3Crect x=%229%22 y=%229%22 width=%2222%22 height=%2222%22 rx=%225%22 transform=%22rotate(45 20 20)%22 fill=%22none%22 stroke=%22%23e8c27a%22 stroke-width=%222.4%22/%3E%3Cpath d=%22M14 17h11l-2.5-2.5M26 23H15l2.5 2.5%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%222.2%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1210,7 +1210,8 @@ const ago=t=>{const m=Math.round((Date.now()-t)/60000);if(m<1)return 'الآن';
 async function renderSnaps(){const box=q('#snapList');if(!box)return;const L=await snapsAll();
   box.innerHTML=L.length?L.map(x=>`<div class="snap"><div class="snap-i"><b>${esc(x.label)}</b><small>${esc(fmtSnap(x.at))} · ${esc(ago(x.at))}${x.by?' · '+esc(x.by):''}</small></div>
    <span class="snap-n">${x.nT} حوالة · ${x.nC} اسم</span><button class="btn sm" type="button" data-snap="${x.id}">استرجاع</button></div>`).join(''):'<p class="hint">لا توجد نسخ بعد. تُحفظ أول نسخة تلقائياً اليوم.</p>';}
-async function restoreFlow(id){const L=await snapsAll();const x=L.find(z=>z.id===id);if(!x)return;const cur=snapshot();const mr=q('#modalRoot');
+async function restoreFlow(id){const L=await snapsAll();const x=L.find(z=>z.id===id);if(!x)return;showRestore(x);}
+function showRestore(x){const cur=snapshot();const mr=q('#modalRoot');
   const curKeys=new Set((cur.transfers||[]).map(tk)),oldKeys=new Set((x.data.transfers||[]).map(tk));
   const gone=[...curKeys].filter(k=>!oldKeys.has(k)).length,back=[...oldKeys].filter(k=>!curKeys.has(k)).length;
   mr.innerHTML=`<div class="modal"><div class="box small"><div class="modal-head"><h3>استرجاع نسخة ${esc(ago(x.at))}؟</h3></div>
@@ -1227,6 +1228,55 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-snap]');if
   if(e.target.closest('#snapNow'))takeSnap(SNAP_KIND.man,'man').then(()=>window.__HZ.toast('تم حفظ نسخة الآن'));
   if(e.target.closest('#openSnaps')){q('#modalRoot').innerHTML='';const t=document.getElementById('tab-set');if(t)t.click();setTimeout(()=>{const c=q('#snapsCard');if(c)c.scrollIntoView({behavior:'smooth',block:'start'});},200);}});
 
+
+/* ---- automatic backup to a folder chosen once ---- */
+let bh=null,bkDone=false,bkBusy=false;
+const DP=('showDirectoryPicker' in window);
+const BK_PRE='نسخة-احتياطية-حوالات-';
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const fmtBk=t=>{const d=new Date(t);const h=d.getHours();return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+' الساعة '+((h%12)||12)+':'+pad(d.getMinutes())+(h<12?' ص':' م');};
+async function bkPerm(ask){if(!bh)return false;try{let p=await bh.queryPermission({mode:'readwrite'});if(p!=='granted'&&ask)p=await bh.requestPermission({mode:'readwrite'});return p==='granted';}catch(e){return false;}}
+async function runBackup(manual){if(!bh||bkBusy)return false;bkBusy=true;try{
+  if(!(await bkPerm(manual))){bkBusy=false;if(!manual)bkBar();return false;}
+  const now=new Date();const d=snapshot();d.backupAt=now.getTime();d.backupBy=me?me.u:'';
+  const f=await bh.getFileHandle(BK_PRE+ymd(now)+'.json',{create:true});const w=await f.createWritable();await w.write(JSON.stringify(d));await w.close();
+  // keep the newest 60 daily files
+  try{const names=[];for await(const [n,h] of bh.entries()){if(h.kind==='file'&&n.startsWith(BK_PRE)&&n.endsWith('.json'))names.push(n);}
+    names.sort().reverse().slice(60).forEach(n=>bh.removeEntry(n).catch(()=>{}));}catch(e){}
+  LSs('hz_bk_at',now.getTime());LSs('hz_bk_n',(d.transfers||[]).length);bkDone=true;const b=q('#bkBar');if(b)b.remove();
+  window.__HZ.toast('تم تحديث النسخة الاحتياطية بتاريخ '+fmtBk(now));renderBk();bkBusy=false;return true;
+}catch(e){bkBusy=false;window.__HZ.toast('تعذّر تحديث النسخة الاحتياطية: '+(e.message||''));renderBk();return false;}}
+function bkBar(){if(q('#bkBar')||!bh)return;const d=document.createElement('div');d.className='upd';d.id='bkBar';d.style.bottom='calc(70px + env(safe-area-inset-bottom,0px))';
+  d.innerHTML=`<div><span>اضغط لتحديث النسخة الاحتياطية في مجلد «${esc(bh.name)}»</span><button class="btn sm primary" type="button" id="bkGo">تحديث</button></div>`;document.body.appendChild(d);
+  q('#bkGo').onclick=()=>runBackup(true);}
+async function pickBkFolder(){if(!DP)return false;try{const h=await window.showDirectoryPicker({id:'hz-backup',mode:'readwrite',startIn:'documents'});
+  bh=h;await idbSet('bh',bh);if(window.__LOG)window.__LOG('settings','اختيار مجلد النسخ الاحتياطي «'+h.name+'»');await runBackup(true);return true;}
+  catch(e){if(e&&e.name!=='AbortError')window.__HZ.toast('تعذّر اختيار المجلد: '+(e.message||''));return false;}}
+function bkModal(){const mr=q('#modalRoot');if(mr.innerHTML.trim())return;
+  mr.innerHTML=`<div class="modal"><div class="box small setup" style="width:min(520px,100%)">
+   <div class="setup-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></div><h3>أين تُحفظ النسخ الاحتياطية؟</h3>
+   <p>اختر مجلداً مرة واحدة فقط، مثل مجلد «نسخ الحوالات» في OneDrive أو على فلاشة. بعدها يرسل النظام نسخة احتياطية إليه <b>تلقائياً في كل مرة تفتحه</b>، مع رسالة بتاريخ التحديث.</p>
+   <div class="setup-acts"><button class="btn primary lg" type="button" id="bkPick">اختيار مجلد النسخ الاحتياطي</button></div>
+   <button class="linkbtn" type="button" id="bkLater">لاحقاً</button></div></div>`;
+  q('#bkPick').onclick=async()=>{if(await pickBkFolder())mr.innerHTML='';};
+  q('#bkLater').onclick=()=>{try{sessionStorage.setItem('hz_bk_later','1')}catch(e){}mr.innerHTML='';window.__HZ.toast('يمكنك اختيار مجلد النسخ الاحتياطي لاحقاً من الإعدادات');};}
+async function backupOnOpen(){if(!DP||bkDone)return;
+  if(!bh){let later=false;try{later=!!sessionStorage.getItem('hz_bk_later')}catch(e){}if(!later){const t=setInterval(()=>{if(!q('#modalRoot').innerHTML.trim()&&me&&!locked){clearInterval(t);bkModal();}},800);}return;}
+  await runBackup(false);}
+function renderBk(){const c=q('#bkCard');if(!c)return;const at=LSg('hz_bk_at',0);
+  if(!DP){q('#bkState').innerHTML='متصفحك لا يدعم الحفظ التلقائي في مجلد. استخدم <b>Edge</b> أو <b>Chrome</b> على الكمبيوتر، أو نزّل نسخة يدوياً.';q('#bkPick2').hidden=true;q('#bkNow').hidden=true;q('#bkOpen').hidden=true;q('#bkDl').hidden=false;return;}
+  q('#bkDl').hidden=true;
+  q('#bkState').innerHTML=bh?`المجلد: <b>${esc(bh.name)}</b><br>آخر نسخة احتياطية: <b>${at?esc(fmtBk(at))+' · '+esc(ago(at)):'لم تُحفظ بعد'}</b>${at?' ('+LSg('hz_bk_n',0)+' حوالة)':''}<br><small>تُحدَّث تلقائياً عند كل فتح للنظام، بملف لكل يوم، ويُحتفظ بآخر 60 يوماً.</small>`:'لم يُختر مجلد بعد. اختر مجلداً لتُحفظ فيه نسخة تلقائياً في كل مرة تفتح النظام.';
+  q('#bkPick2').textContent=bh?'تغيير المجلد':'اختيار المجلد';q('#bkNow').hidden=!bh;q('#bkOpen').hidden=false;}
+function bkDownload(){const d=snapshot();d.backupAt=Date.now();const blob=new Blob([JSON.stringify(d)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=BK_PRE+ymd(new Date())+'.json';document.body.appendChild(a);a.click();a.remove();LSs('hz_bk_at',Date.now());LSs('hz_bk_n',(d.transfers||[]).length);renderBk();window.__HZ.toast('تم تنزيل النسخة الاحتياطية بتاريخ '+fmtBk(Date.now()));}
+async function bkRestore(){try{let file;
+  if('showOpenFilePicker' in window){const o={types:[{description:'نسخة احتياطية',accept:{'application/json':['.json'],'text/html':['.html']}}],multiple:false};if(bh)o.startIn=bh;const [h]=await window.showOpenFilePicker(o);file=await h.getFile();}
+  else{file=await new Promise(res=>{const i=document.createElement('input');i.type='file';i.accept='.json,.html';i.onchange=()=>res(i.files[0]);i.click();});}
+  if(!file)return;const F=parseFileText(await file.text());if(!F||!Array.isArray(F.transfers)){window.__HZ.toast('الملف ليس نسخة احتياطية صالحة');return;}
+  showRestore({label:'نسخة احتياطية «'+file.name+'»',at:F.backupAt||F.updatedAt||file.lastModified,nT:F.transfers.length,data:F});
+}catch(e){if(e&&e.name!=='AbortError')window.__HZ.toast('تعذّر فتح الملف: '+(e.message||''));}}
+
 /* ---- first-run: choose where to save, then save automatically ---- */
 function setupModal(){const mr=q('#modalRoot');
   mr.innerHTML=`<div class="modal"><div class="box small setup" style="width:min(520px,100%)">
@@ -1241,7 +1291,7 @@ function setupModal(){const mr=q('#modalRoot');
 function resumeBar(){if(q('#resumeBar'))return;const d=document.createElement('div');d.className='upd';d.id='resumeBar';
   d.innerHTML=`<div><span>اضغط لمتابعة الحفظ التلقائي في «${esc(fh.name)}»</span><button class="btn sm primary" type="button" id="resumeNow">متابعة</button></div>`;document.body.appendChild(d);
   q('#resumeNow').onclick=async()=>{try{const p=await fh.requestPermission({mode:'readwrite'});if(p==='granted'){d.remove();await pullFromFile(true);dirty=true;await writeFile(true);window.__HZ.toast('الحفظ التلقائي يعمل');}}catch(e){window.__HZ.toast('تعذّر الوصول للملف');}};}
-async function afterLogin(){if(!FS)return;
+async function afterLogin(){backupOnOpen();if(!FS)return;
   if(!fh){let later=false;try{later=!!sessionStorage.getItem('hz_setup_later')}catch(e){}if(!later)setupModal();return;}
   try{const p=await fh.queryPermission({mode:'readwrite'});if(p!=='granted')resumeBar();}catch(e){}}
 
@@ -1300,7 +1350,12 @@ function mountUI(){
       <label class="f">تأكيد الرمز<input id="lkPin2" type="password" inputmode="numeric" maxlength="6" dir="ltr" autocomplete="new-password"></label>
       <label class="f full">القفل بعد عدم الاستخدام لمدة<select id="lkMin"><option value="5">5 دقائق</option><option value="15">15 دقيقة</option><option value="30">30 دقيقة</option><option value="60">ساعة</option></select></label></div>
       <div class="row-actions"><button class="btn sm primary" type="button" id="lkSave">تفعيل القفل</button><button class="btn sm" type="button" id="lkNow" hidden>قفل الآن</button><button class="btn sm danger" type="button" id="lkOff" hidden>إيقاف القفل</button></div>`;
-    v.after(k);}
+    v.after(k);
+    const b=document.createElement('div');b.className='card';b.id='bkCard';b.style.gridColumn='1/-1';
+    b.innerHTML=`<h2 class="hd"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>النسخ الاحتياطي التلقائي</span></h2>
+      <p class="hint" id="bkState" style="margin-top:0"></p>
+      <div class="row-actions"><button class="btn sm primary" type="button" id="bkPick2">اختيار المجلد</button><button class="btn sm" type="button" id="bkNow">نسخ احتياطي الآن</button><button class="btn sm" type="button" id="bkOpen">استرجاع من نسخة احتياطية</button><button class="btn sm primary" type="button" id="bkDl" hidden>تنزيل نسخة احتياطية</button></div>`;
+    v.before(b);}
   q('#logoutBtn').onclick=logout;
   q('#lockBtn').onclick=()=>{const r=myRec();if(r&&r.pinH)lockNow();else{const t=q('#tab-set');if(t)t.click();setTimeout(()=>{const c=q('#lockCard');if(c)c.scrollIntoView({behavior:'smooth',block:'start'});},200);window.__HZ.toast('فعّل رمز القفل أولاً من الإعدادات');}};
   q('#lkSave').onclick=()=>{const a=q('#lkPin').value,b=q('#lkPin2').value;if(!/^\d{4,6}$/.test(a)){window.__HZ.toast('الرمز من 4 إلى 6 أرقام');return;}if(a!==b){window.__HZ.toast('الرمزان غير متطابقين');return;}
@@ -1309,6 +1364,7 @@ function mountUI(){
   q('#lkMin').onchange=()=>{const L=users();const r=L.find(z=>norm(z.u)===norm(me.u));if(!r||!r.pinH)return;r.lockMin=+q('#lkMin').value||15;saveUsers(L);renderLockCard();armIdle();};
   q('#lkOff').onclick=()=>{const L=users();const r=L.find(z=>norm(z.u)===norm(me.u));if(!r)return;delete r.pinH;saveUsers(L);renderLockCard();clearTimeout(idleT);if(window.__LOG)window.__LOG('settings','إيقاف رمز القفل للمستخدم '+me.u);window.__HZ.toast('أُوقف رمز القفل');};
   q('#lkNow').onclick=lockNow;
+  if(q('#bkCard')){q('#bkPick2').onclick=pickBkFolder;q('#bkNow').onclick=()=>runBackup(true);q('#bkOpen').onclick=bkRestore;q('#bkDl').onclick=bkDownload;}
   q('#cloudBtn').onclick=()=>{if(!FS&&dirty){downloadCopy();return;}odPanel(false);};
   q('#nuAdd').onclick=()=>{const H=window.__HZ;const u=norm(q('#nuUser').value);if(!u){H.toast('اكتب اسم المستخدم');return;}
     const L=users();if(L.some(x=>norm(x.u)===u)){H.toast('المستخدم موجود');return;}L.push({u,role:'user',at:Date.now()});saveUsers(L);
@@ -1319,6 +1375,7 @@ function mountUI(){
 window.__FB_BOOT=async()=>{mountUI();
   try{const lu=localStorage.getItem('hz_lastuser');if(lu)q('#gUser').value=lu;}catch(e){}
   if(FS){const h=await idbGet('fh');if(h){fh=h;}}
+  if(DP){const b=await idbGet('bh');if(b)bh=b;}renderBk();
   try{const su=sessionStorage.getItem('hz_session');const x=su&&users().find(z=>norm(z.u)===norm(su));if(x)enter(x);}catch(e){}
   state();if(dirty&&fh)writeFile(true);pullFromFile();};
 })();
@@ -1800,8 +1857,8 @@ function renderFonts(){const sel=draftSet.font||'modern';FONTS.forEach(loadFontC
 
 
 /* ---------- version & live updates ---------- */
-const APP_VERSION='3.3.0',APP_DATE='2026-11-26';
-const APP_NOTES=['قفل سريع برمز اختياري بعد فترة عدم استخدام','«سجل العمليات»: من أنشأ وعدّل وغيّر الحالة وحذف، مع سبب الحذف واستعادة المحذوف','«الإقفال اليومي» لكل شركة وعملة مع تصدير PDF و Excel','مشاركة السند عبر واتساب برسالة جاهزة للمستلم','«النسخ السابقة»: نسخة يومية تلقائية وقبل كل حذف أو استيراد، واسترجاع بضغطة مع معاينة','عند أول دخول يسألك النظام أين تحفظ بياناتك، ثم يحفظ تلقائياً','ملف حفظ خفيف (بيانات-الحوالات.json) للنسخة المباشرة على الموقع','هوية «الحيوي»: أخضر غابي مع ليموني وزوايا دائرية','اختيار خط النظام من 8 خطوط عربية','3 أشكال سندات جديدة: التذكرة، العصري، تتبّع الحالة','نشر مباشر عبر GitHub و Vercel مع تنبيه عند صدور تحديث','رقم الإصدار يظهر في الشريط العلوي وفي «عن النظام»'];
+const APP_VERSION='3.4.0',APP_DATE='2026-11-27';
+const APP_NOTES=['نسخ احتياطي تلقائي: تختار المجلد مرة واحدة، ويُرسل النظام نسخة إليه في كل مرة تفتحه مع رسالة بتاريخ التحديث','استرجاع البيانات من ملف نسخة احتياطية مع معاينة قبل الاسترجاع','قفل سريع برمز اختياري بعد فترة عدم استخدام','«سجل العمليات»: من أنشأ وعدّل وغيّر الحالة وحذف، مع سبب الحذف واستعادة المحذوف','«الإقفال اليومي» لكل شركة وعملة مع تصدير PDF و Excel','مشاركة السند عبر واتساب برسالة جاهزة للمستلم','«النسخ السابقة»: نسخة يومية تلقائية وقبل كل حذف أو استيراد، واسترجاع بضغطة مع معاينة','عند أول دخول يسألك النظام أين تحفظ بياناتك، ثم يحفظ تلقائياً','ملف حفظ خفيف (بيانات-الحوالات.json) للنسخة المباشرة على الموقع','هوية «الحيوي»: أخضر غابي مع ليموني وزوايا دائرية','اختيار خط النظام من 8 خطوط عربية','3 أشكال سندات جديدة: التذكرة، العصري، تتبّع الحالة','نشر مباشر عبر GitHub و Vercel مع تنبيه عند صدور تحديث','رقم الإصدار يظهر في الشريط العلوي وفي «عن النظام»'];
 const HOSTED=/^https?:$/.test(location.protocol);
 function renderAbout(){if(!$('#aboutVer'))return;$('#aboutVer').textContent='v'+APP_VERSION;$('#aboutDate').textContent=APP_DATE;
   $('#aboutHost').textContent=HOSTED?('موقع مباشر · '+location.host):'ملف على هذا الجهاز';$('#aboutNotes').innerHTML=APP_NOTES.map(n=>`<li>${esc(n)}</li>`).join('');}
