@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="app-version" content="3.0.0">
+<meta name="app-version" content="3.1.0">
 <title>نظام حوالات</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 rx=%229%22 fill=%22%230a2a36%22/%3E%3Crect x=%229%22 y=%229%22 width=%2222%22 height=%2222%22 rx=%225%22 transform=%22rotate(45 20 20)%22 fill=%22none%22 stroke=%22%23e8c27a%22 stroke-width=%222.4%22/%3E%3Cpath d=%22M14 17h11l-2.5-2.5M26 23H15l2.5 2.5%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%222.2%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -759,7 +759,7 @@ svg.bc{display:block;height:auto;max-width:100%}
 <div class="app">
   <header class="appbar">
     <div class="appbar-in">
-      <div class="logo"><svg class="mark" viewBox="0 0 44 44" aria-hidden="true"><rect x="1" y="1" width="42" height="42" rx="12" fill="var(--brand)"/><circle cx="17" cy="22" r="8.5" fill="none" stroke="#fff" stroke-width="2.4"/><circle cx="27" cy="22" r="8.5" fill="none" stroke="#9fe870" stroke-width="2.4"/><path d="M21.5 15.2a8.5 8.5 0 0 1 0 13.6" fill="none" stroke="#fff" stroke-width="2.4"/></svg><div><h1><span id="hdrName">نظام حوالات</span><span class="ver" id="hdrVer">v3.0.0</span></h1><small id="hdrAgent"></small></div><img id="hdrLogo" alt="" hidden></div>
+      <div class="logo"><svg class="mark" viewBox="0 0 44 44" aria-hidden="true"><rect x="1" y="1" width="42" height="42" rx="12" fill="var(--brand)"/><circle cx="17" cy="22" r="8.5" fill="none" stroke="#fff" stroke-width="2.4"/><circle cx="27" cy="22" r="8.5" fill="none" stroke="#9fe870" stroke-width="2.4"/><path d="M21.5 15.2a8.5 8.5 0 0 1 0 13.6" fill="none" stroke="#fff" stroke-width="2.4"/></svg><div><h1><span id="hdrName">نظام حوالات</span><span class="ver" id="hdrVer">v3.1.0</span></h1><small id="hdrAgent"></small></div><img id="hdrLogo" alt="" hidden></div>
       <nav class="tabs" role="tablist" aria-label="أقسام النظام">
         <button role="tab" data-tab="home" aria-selected="true" id="tab-home"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg><span>الرئيسية</span></button>
         <button role="tab" data-tab="new" aria-selected="false" id="tab-new"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3 10 14"/><path d="M21 3l-7 18-4-7-7-4z"/></svg><span>حوالة جديدة</span></button>
@@ -977,6 +977,13 @@ svg.bc{display:block;height:auto;max-width:100%}
 @media (max-width:460px){.cl-grid{grid-template-columns:auto 1fr}}
 .cl-acts{display:flex;flex-wrap:wrap;gap:8px}
 .cl-help ol{padding-inline-start:20px;margin:0;display:flex;flex-direction:column;gap:6px;font-size:.9rem}
+.setup{text-align:center;padding:26px 24px 18px!important}
+.setup-ico{width:62px;height:62px;border-radius:18px;background:var(--gold-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
+.setup-ico svg{width:34px;height:34px}
+.setup h3{margin:0 0 8px;font:700 1.25rem var(--f-disp)}
+.setup p{margin:0 0 18px;color:var(--muted);line-height:1.8}
+.setup-acts{display:flex;flex-direction:column;gap:8px}
+.linkbtn{margin-top:10px;border:0;background:none;color:var(--muted);font:600 .85rem var(--f-ui);cursor:pointer;text-decoration:underline}
 .users-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
 .users-list .u{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
 .users-list .u small{color:var(--muted)}
@@ -1030,6 +1037,10 @@ function idb(){return new Promise((res,rej)=>{try{const r=indexedDB.open('hz_fil
 async function idbGet(k){try{const d=await idb();return await new Promise(res=>{const t=d.transaction('kv').objectStore('kv').get(k);t.onsuccess=()=>res(t.result||null);t.onerror=()=>res(null)})}catch(e){return null}}
 async function idbSet(k,v){try{const d=await idb();await new Promise(res=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=res;t.onerror=res})}catch(e){}}
 const FS=('showSaveFilePicker' in window);
+const WEB=/^https?:$/.test(location.protocol);
+const isJsonH=h=>!!h&&/\.json$/i.test(h.name||'');
+function parseFileText(txt){const t=(txt||'').trim();if(t.startsWith('{'))return JSON.parse(t);const i=txt.indexOf(DS),j=txt.indexOf(DE,i);if(i<0||j<0)return null;return JSON.parse(txt.slice(i+DS.length,j));}
+const outFor=h=>isJsonH(h)?JSON.stringify(snapshot()):buildOut();
 const ICO_OD='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 1 1 .9-9.9A6 6 0 0 1 19 10a4 4 0 0 1 0 8z"/></svg>';
 let lastSave=LSg('hz_last_save',0),lastPull=LSg('hz_last_pull',0),odErr='';
 function odStatus(){if(!FS)return dirty?['err','نزّل نسخة محدّثة']:['on','محفوظ'];if(!fh)return ['off','OneDrive غير مربوط'];if(odErr)return ['err','تعذّر الوصول للملف'];return dirty?['busy','جارٍ الحفظ…']:['on','OneDrive · متزامن'];}
@@ -1037,23 +1048,23 @@ function state(){const el=q('#cloudBtn');if(!el)return;const [c,t]=odStatus();el
 async function writeFile(silent){if(!fh)return false;if(saving){clearTimeout(saveT);saveT=setTimeout(()=>writeFile(true),800);return false;}saving=true;
   try{let p=await fh.queryPermission({mode:'readwrite'});if(p!=='granted'){if(silent){saving=false;state();return false}p=await fh.requestPermission({mode:'readwrite'})}
     if(p!=='granted'){saving=false;return false}
-    try{const f=await fh.getFile();if(f.lastModified>lastFileAt+500){const txt=await f.text();const i=txt.indexOf(DS),j=txt.indexOf(DE,i);if(i>=0&&j>i){const F=JSON.parse(txt.slice(i+DS.length,j));if((F.updatedAt||0)>0)mergeIn(F);}}}catch(e){}
-    const w=await fh.createWritable();await w.write(buildOut());await w.close();
+    try{const f=await fh.getFile();if(f.lastModified>lastFileAt+500&&f.size>0){const F=parseFileText(await f.text());if(F&&(F.updatedAt||0)>0)mergeIn(F);}}catch(e){}
+    const w=await fh.createWritable();await w.write(outFor(fh));await w.close();
     try{lastFileAt=(await fh.getFile()).lastModified}catch(e){lastFileAt=Date.now()}
     dirty=false;odErr='';lastSave=Date.now();LSs('hz_last_save',lastSave);saving=false;state();return true;}
   catch(e){saving=false;odErr=e.message||'';if(!silent)window.__HZ.toast('تعذّر الحفظ في الملف: '+e.message);state();return false;}}
 async function linkFile(mode){
   if(!FS){downloadCopy();return;}
   try{let h;
-    if(mode==='open'){[h]=await window.showOpenFilePicker({types:[{description:'نظام حوالات',accept:{'text/html':['.html']}}],startIn:'documents'});
+    if(mode==='open'){[h]=await window.showOpenFilePicker({types:[{description:'ملف حفظ الحوالات',accept:{'application/json':['.json'],'text/html':['.html']}}],startIn:'documents'});
       if(await h.requestPermission({mode:'readwrite'})!=='granted')return;fh=h;await idbSet('fh',fh);lastFileAt=0;await pullFromFile(true);dirty=true;await writeFile(false);
       window.__HZ.toast('تم الربط بالملف «'+fh.name+'». الحفظ والمزامنة تعمل الآن عبره');}
     else{window.__HZ.toast('اختر مجلد OneDrive ثم احفظ');
-      h=await window.showSaveFilePicker({suggestedName:'نظام-حوالات.html',startIn:'documents',types:[{description:'نظام حوالات',accept:{'text/html':['.html']}}]});
+      h=await window.showSaveFilePicker(WEB?{suggestedName:'بيانات-الحوالات.json',startIn:'documents',types:[{description:'ملف حفظ الحوالات',accept:{'application/json':['.json']}}]}:{suggestedName:'نظام-حوالات.html',startIn:'documents',types:[{description:'نظام حوالات',accept:{'text/html':['.html']}}]});
       fh=h;await idbSet('fh',fh);dirty=true;lastFileAt=0;await writeFile(false);
-      window.__HZ.toast('تم حفظ النظام في «'+fh.name+'». افتح هذه النسخة من OneDrive على بقية الأجهزة');}
-  }catch(e){if(e&&e.name!=='AbortError')window.__HZ.toast('تعذّر الوصول للملف: '+(e.message||''));}
-  state();}
+      window.__HZ.toast(WEB?'تم. بياناتك تُحفظ الآن تلقائياً في «'+fh.name+'»':'تم حفظ النظام في «'+fh.name+'». افتح هذه النسخة من OneDrive على بقية الأجهزة');}
+  }catch(e){if(e&&e.name!=='AbortError')window.__HZ.toast('تعذّر الوصول للملف: '+(e.message||''));return false;}
+  state();return !!fh;}
 async function unlinkFile(){fh=null;await idbSet('fh',null);state();window.__HZ.toast('أُلغي الربط على هذا الجهاز. البيانات باقية في المتصفح وفي الملف');}
 const tmf=t=>t?new Date(t).toLocaleString('en-GB',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}):'—';
 function odPanel(refresh){const mr=q('#modalRoot');if(!refresh&&!me)return;const [c,t]=odStatus();
@@ -1097,24 +1108,41 @@ function mergeIn(F){const H=window.__HZ;const del=Object.assign({},LSg('hz_del',
   LSs('hz_del',del);LSs('hz_data_at',Math.max(lAt,F.updatedAt||0));
   H.loadLocal();H.renderAll();}
 async function pullFromFile(force){if(!fh)return;try{if(await fh.queryPermission({mode:'read'})!=='granted')return;
-  const f=await fh.getFile();lastPull=Date.now();LSs('hz_last_pull',lastPull);odErr='';if(!force&&f.lastModified<=lastFileAt+500&&!dirty){state();return;}const txt=await f.text();const i=txt.indexOf(DS),j=txt.indexOf(DE,i);if(i<0||j<0)return;
-  const F=JSON.parse(txt.slice(i+DS.length,j));if((F.updatedAt||0)>LSg('hz_data_at',0)||dirty){const was=dirty;mergeIn(F);lastFileAt=f.lastModified;if(was||(F.updatedAt||0)<LSg('hz_data_at',0)){dirty=true;writeFile(true);}window.__HZ.toast('وصلت تحديثات من OneDrive');}
+  const f=await fh.getFile();lastPull=Date.now();LSs('hz_last_pull',lastPull);odErr='';if(!force&&f.lastModified<=lastFileAt+500&&!dirty){state();return;}if(!f.size)return;const F=parseFileText(await f.text());if(!F)return;if((F.updatedAt||0)>LSg('hz_data_at',0)||dirty){const was=dirty;mergeIn(F);lastFileAt=f.lastModified;if(was||(F.updatedAt||0)<LSg('hz_data_at',0)){dirty=true;writeFile(true);}window.__HZ.toast('وصلت تحديثات من OneDrive');}
   else lastFileAt=f.lastModified;state();}catch(e){odErr=(e&&e.name==='NotFoundError')?'الملف غير موجود. ربما نُقل أو حُذف من OneDrive':'';state();}}
 window.addEventListener('focus',pullFromFile);
 setInterval(()=>{if(document.visibilityState==='visible')pullFromFile()},15000);
 window.addEventListener('storage',e=>{if(KEYS.includes(e.key)&&window.__HZ){window.__HZ.loadLocal();window.__HZ.renderAll();}});
 
 
+/* ---- first-run: choose where to save, then save automatically ---- */
+function setupModal(){const mr=q('#modalRoot');
+  mr.innerHTML=`<div class="modal"><div class="box small setup" style="width:min(520px,100%)">
+   <div class="setup-ico">${ICO_OD}</div><h3>أين تريد حفظ بياناتك؟</h3>
+   <p>اختر مرة واحدة مكاناً لحفظ الحوالات، ويُفضَّل مجلداً داخل <b>OneDrive</b> مثل «الحوالات». بعدها يُحفظ كل شيء تلقائياً، وتصل بياناتك إلى أي جهاز يفتح نفس الملف.</p>
+   <div class="setup-acts"><button class="btn primary lg" type="button" id="stNew">اختيار مكان الحفظ</button>
+   <button class="btn lg" type="button" id="stOpen">لدي ملف حفظ سابق</button></div>
+   <button class="linkbtn" type="button" id="stLater">لاحقاً</button></div></div>`;
+  q('#stNew').onclick=async()=>{if(await linkFile('save'))mr.innerHTML='';};
+  q('#stOpen').onclick=async()=>{await linkFile('open');if(fh)mr.innerHTML='';};
+  q('#stLater').onclick=()=>{try{sessionStorage.setItem('hz_setup_later','1')}catch(e){}mr.innerHTML='';window.__HZ.toast('يمكنك اختيار مكان الحفظ لاحقاً من شارة السحابة في الأعلى');};}
+function resumeBar(){if(q('#resumeBar'))return;const d=document.createElement('div');d.className='upd';d.id='resumeBar';
+  d.innerHTML=`<div><span>اضغط لمتابعة الحفظ التلقائي في «${esc(fh.name)}»</span><button class="btn sm primary" type="button" id="resumeNow">متابعة</button></div>`;document.body.appendChild(d);
+  q('#resumeNow').onclick=async()=>{try{const p=await fh.requestPermission({mode:'readwrite'});if(p==='granted'){d.remove();await pullFromFile(true);dirty=true;await writeFile(true);window.__HZ.toast('الحفظ التلقائي يعمل');}}catch(e){window.__HZ.toast('تعذّر الوصول للملف');}};}
+async function afterLogin(){if(!FS)return;
+  if(!fh){let later=false;try{later=!!sessionStorage.getItem('hz_setup_later')}catch(e){}if(!later)setupModal();return;}
+  try{const p=await fh.queryPermission({mode:'readwrite'});if(p!=='granted')resumeBar();}catch(e){}}
+
 /* ---- login ---- */
 const users=()=>LSg('hz_users',[])||[];
 function msg(t){q('#gMsg').textContent=t||'';}
 function enter(u){me=u;try{sessionStorage.setItem('hz_session',u.u)}catch(e){}q('#fbGate').hidden=true;msg('');
-  q('#userBox').hidden=false;q('#userName').textContent=u.u;renderUsers();state();}
+  q('#userBox').hidden=false;q('#userName').textContent=u.u;renderUsers();state();setTimeout(afterLogin,300);}
 q('#gForm').addEventListener('submit',async e=>{e.preventDefault();const u=norm(q('#gUser').value);if(!u){msg('اكتب اسم المستخدم');return;}
   let x=users().find(z=>norm(z.u)===u);
   if(!x){msg('اسم المستخدم غير مسجّل في النظام');return;}
   try{localStorage.setItem('hz_lastuser',u)}catch(e){}enter(x);});
-function logout(){me=null;q('#modalRoot').innerHTML='';try{sessionStorage.removeItem('hz_session')}catch(e){}q('#fbGate').hidden=false;q('#userBox').hidden=true;try{window.__HZ.fillForm(null)}catch(e){}}
+function logout(){me=null;const rb=q('#resumeBar');if(rb)rb.remove();q('#modalRoot').innerHTML='';try{sessionStorage.removeItem('hz_session')}catch(e){}q('#fbGate').hidden=false;q('#userBox').hidden=true;try{window.__HZ.fillForm(null)}catch(e){}}
 function renderUsers(){const card=q('#usersCard');if(!card)return;card.hidden=!(me&&me.role==='owner');
   q('#usersList').innerHTML=users().map(x=>`<div class="u"><span><b dir="ltr">${esc(x.u)}</b> <small>${x.role==='owner'?'المسؤول':'مستخدم'}</small></span>${x.role==='owner'?'':`<button class="btn sm danger" type="button" data-rmuser="${esc(x.u)}">إزالة</button>`}</div>`).join('');}
 function saveUsers(L){LSs('hz_users',L);LSs('hz_users_at',Date.now());window.__ON_SAVE('hz_users');renderUsers();}
@@ -1135,8 +1163,8 @@ function mountUI(){
 }
 window.__FB_BOOT=async()=>{mountUI();
   try{const lu=localStorage.getItem('hz_lastuser');if(lu)q('#gUser').value=lu;}catch(e){}
-  try{const su=sessionStorage.getItem('hz_session');const x=su&&users().find(z=>norm(z.u)===norm(su));if(x)enter(x);}catch(e){}
   if(FS){const h=await idbGet('fh');if(h){fh=h;}}
+  try{const su=sessionStorage.getItem('hz_session');const x=su&&users().find(z=>norm(z.u)===norm(su));if(x)enter(x);}catch(e){}
   state();if(dirty&&fh)writeFile(true);pullFromFile();};
 })();
 </script>
@@ -1617,8 +1645,8 @@ function renderFonts(){const sel=draftSet.font||'modern';FONTS.forEach(loadFontC
 
 
 /* ---------- version & live updates ---------- */
-const APP_VERSION='3.0.0',APP_DATE='2026-11-26';
-const APP_NOTES=['هوية «الحيوي»: أخضر غابي مع ليموني وزوايا دائرية','اختيار خط النظام من 8 خطوط عربية','3 أشكال سندات جديدة: التذكرة، العصري، تتبّع الحالة','نشر مباشر عبر GitHub و Vercel مع تنبيه عند صدور تحديث','رقم الإصدار يظهر في الشريط العلوي وفي «عن النظام»'];
+const APP_VERSION='3.1.0',APP_DATE='2026-11-26';
+const APP_NOTES=['عند أول دخول يسألك النظام أين تحفظ بياناتك، ثم يحفظ تلقائياً','ملف حفظ خفيف (بيانات-الحوالات.json) للنسخة المباشرة على الموقع','هوية «الحيوي»: أخضر غابي مع ليموني وزوايا دائرية','اختيار خط النظام من 8 خطوط عربية','3 أشكال سندات جديدة: التذكرة، العصري، تتبّع الحالة','نشر مباشر عبر GitHub و Vercel مع تنبيه عند صدور تحديث','رقم الإصدار يظهر في الشريط العلوي وفي «عن النظام»'];
 const HOSTED=/^https?:$/.test(location.protocol);
 function renderAbout(){if(!$('#aboutVer'))return;$('#aboutVer').textContent='v'+APP_VERSION;$('#aboutDate').textContent=APP_DATE;
   $('#aboutHost').textContent=HOSTED?('موقع مباشر · '+location.host):'ملف على هذا الجهاز';$('#aboutNotes').innerHTML=APP_NOTES.map(n=>`<li>${esc(n)}</li>`).join('');}
