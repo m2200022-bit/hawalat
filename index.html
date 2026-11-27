@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="app-version" content="3.7.0">
+<meta name="app-version" content="3.7.1">
 <title>نظام حوالات</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 rx=%229%22 fill=%22%230a2a36%22/%3E%3Crect x=%229%22 y=%229%22 width=%2222%22 height=%2222%22 rx=%225%22 transform=%22rotate(45 20 20)%22 fill=%22none%22 stroke=%22%23e8c27a%22 stroke-width=%222.4%22/%3E%3Cpath d=%22M14 17h11l-2.5-2.5M26 23H15l2.5 2.5%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%222.2%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -811,6 +811,11 @@ svg.bc{display:block;height:auto;max-width:100%}
 .audit .an.ok{background:#e9f6e4;color:#2d6a1f}.audit details summary{cursor:pointer;font-size:12.5px;opacity:.8}.audit details div{padding:4px 0 0;font-size:12.5px}
 .vres{border-radius:12px;padding:12px 14px;margin-top:10px}.vres.ok{background:#e9f6e4;color:#1d4d12}.vres.bad{background:#fdecec;color:#8a1c1c}.vres.warn{background:#fff4e0;color:#7a4e00}
 .vres dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:8px 0 0}.vres dt{opacity:.7}
+
+.tpl-cell{position:relative}.tpl-cell .tpl-opt{width:100%}
+.tpl-del{position:absolute;top:8px;left:8px;width:30px;height:30px;border-radius:50%;border:1px solid #f0c9c9;background:#fff;color:#b42318;display:grid;place-items:center;cursor:pointer;opacity:.85;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.tpl-del:hover{opacity:1;background:#fdecec}.tpl-del svg{width:16px;height:16px}
+.tpl-bar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:0 0 12px;font-size:13px}.tpl-qr{display:flex!important;flex-direction:row!important;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;font-weight:600}.tpl-qr input{width:auto!important;margin:0}
 </style>
 </head>
 <body>
@@ -819,7 +824,7 @@ svg.bc{display:block;height:auto;max-width:100%}
 <div class="app">
   <header class="appbar">
     <div class="appbar-in">
-      <div class="logo"><svg class="mark" viewBox="0 0 44 44" aria-hidden="true"><rect x="1" y="1" width="42" height="42" rx="12" fill="var(--brand)"/><circle cx="17" cy="22" r="8.5" fill="none" stroke="#fff" stroke-width="2.4"/><circle cx="27" cy="22" r="8.5" fill="none" stroke="#9fe870" stroke-width="2.4"/><path d="M21.5 15.2a8.5 8.5 0 0 1 0 13.6" fill="none" stroke="#fff" stroke-width="2.4"/></svg><div><h1><span id="hdrName">نظام حوالات</span><span class="ver" id="hdrVer">v3.7.0</span></h1><small id="hdrAgent"></small></div><img id="hdrLogo" alt="" hidden></div>
+      <div class="logo"><svg class="mark" viewBox="0 0 44 44" aria-hidden="true"><rect x="1" y="1" width="42" height="42" rx="12" fill="var(--brand)"/><circle cx="17" cy="22" r="8.5" fill="none" stroke="#fff" stroke-width="2.4"/><circle cx="27" cy="22" r="8.5" fill="none" stroke="#9fe870" stroke-width="2.4"/><path d="M21.5 15.2a8.5 8.5 0 0 1 0 13.6" fill="none" stroke="#fff" stroke-width="2.4"/></svg><div><h1><span id="hdrName">نظام حوالات</span><span class="ver" id="hdrVer">v3.7.1</span></h1><small id="hdrAgent"></small></div><img id="hdrLogo" alt="" hidden></div>
       <nav class="tabs" role="tablist" aria-label="أقسام النظام">
         <button role="tab" data-tab="home" aria-selected="true" id="tab-home"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/></svg><span>الرئيسية</span></button>
         <button role="tab" data-tab="new" aria-selected="false" id="tab-new"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3 10 14"/><path d="M21 3l-7 18-4-7-7-4z"/></svg><span>حوالة جديدة</span></button>
@@ -3937,7 +3942,7 @@ function qrSVG(t,px){if(typeof window.qrcode!=='function')return '';const txt=qr
   if(!q){try{q=window.qrcode(0,'M');q.addData(txt,'Byte');q.make();QRC[txt]=q;}catch(e){return ''}}
   const n=q.getModuleCount();let d='';for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(q.isDark(r,c))d+='M'+c+' '+r+'h1v1h-1z';
   return `<svg class="qr" viewBox="-1 -1 ${n+2} ${n+2}" width="${px}" height="${px}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" role="img" aria-label="رمز التحقق"><rect x="-1" y="-1" width="${n+2}" height="${n+2}" fill="#fff"/><path d="${d}" fill="#111"/></svg>`;}
-function bcFor(t,opt){opt=opt||{};const b=barcodeSVG(String(t.no||'0'),opt);if(S.qrOff||!t.no)return b;
+function bcFor(t,opt){opt=opt||{};const b=barcodeSVG(String(t.no||'0'),opt);if(!S.qrOn||!t.no)return b;
   const px=Math.max(50,(opt.h||34)+(opt.label===false?0:13)+16);const q=qrSVG(t,px);if(!q)return b;
   return `<span class="bcq">${b}<span class="qrw">${q}<small>${esc(vcode(t))}</small></span></span>`;}
 
@@ -4088,7 +4093,8 @@ function rTracker(t,s){const p=P(t,s);const order=['unpaid','received','ready','
 
 const TPLS=[{id:'fresh',n:'العصري',d:'بطاقة دائرية بمبلغ كبير وحالة ملونة'},{id:'ticket',n:'التذكرة',d:'مثل بطاقة الصعود: من المرسل إلى المستلم مع كعب'},{id:'tracker',n:'تتبّع الحالة',d:'شريط مراحل الحوالة حتى التسليم'},{id:'boxed',n:'النموذج المربّع',d:'خانات مؤطّرة بالعربي والإنجليزي، مثل يمن اكسبرس'},{id:'bank',n:'إشعار مصرفي',d:'نموذج بنكي رسمي بمربعات بيانات'},{id:'premium',n:'الفاخر',d:'كحلي وذهبي مع علامة مائية للشعار'},{id:'minimal',n:'المؤسسي البسيط',d:'مساحات بيضاء ومبلغ كبير بلون الشركة'},{id:'dual',n:'نسختان',d:'نسخة للعميل ونسخة للمكتب بخط قص'},{id:'chevron',n:'الشعار المائل',d:'ترويسة بألوان الشعار وختم بارز'},{id:'band',n:'الشريط الجانبي',d:'عصري، يبرز المبلغ ورقم الحوالة'},{id:'voucher',n:'سند ثنائي اللغة',d:'عربي وإنجليزي مع التاريخ الهجري'},{id:'cheque',n:'الشيك',d:'بنمط الشيكات مع كعب للأرشفة'},{id:'formal',n:'الرسمي الجدولي',d:'جدول رسمي واضح للطباعة'},{id:'thermal',n:'إيصال حراري 80مم',d:'لطابعات الإيصالات الصغيرة'},{id:'classic',n:'الأصلي',d:'مطابق للنموذج المرفق'}];
 (function(){try{if(!localStorage.getItem('hz_tplmig37')){Object.keys(localStorage).filter(k=>/^hz_tpl_/.test(k)).forEach(k=>localStorage.removeItem(k));localStorage.setItem('hz_tplmig37','1');}}catch(e){}})();
-function viewTpl(t){const co=t?coOf(t):(($('#f-co')&&$('#f-co').value)||curCo());const c=getCo(co);const v=LS.get('hz_tpl_'+co,null)||c.tpl||LS.get('hz_tpl',null)||S.tpl||'chevron';return TPLS.some(x=>x.id===v)?v:'chevron';}
+const TV=()=>{const h=S.tplHidden||[];const L=TPLS.filter(x=>!h.includes(x.id));return L.length?L:TPLS;};
+function viewTpl(t){const co=t?coOf(t):(($('#f-co')&&$('#f-co').value)||curCo());const c=getCo(co);const v=LS.get('hz_tpl_'+co,null)||c.tpl||LS.get('hz_tpl',null)||S.tpl||'chevron';const V=TV();return V.some(x=>x.id===v)?v:V[0].id;}
 function receipt(t,s,tpl){tpl=tpl||viewTpl(t);s=withCo(s,coOf(t));return tpl==='fresh'?rFresh(t,s):tpl==='ticket'?rTicket(t,s):tpl==='tracker'?rTracker(t,s):tpl==='boxed'?rBoxed(t,s):tpl==='bank'?rBank(t,s):tpl==='premium'?rPremium(t,s):tpl==='minimal'?rMinimal(t,s):tpl==='dual'?rDual(t,s):tpl==='chevron'?rChevron(t,s):tpl==='voucher'?rVoucher(t,s):tpl==='thermal'?rThermal(t,s):tpl==='band'?rBand(t,s):tpl==='cheque'?rCheque(t,s):tpl==='formal'?rFormal(t,s):rClassic(t,s);}
 function P(t,s){const emp=(s.employees||[]).find(e=>e.name===t.employee);const c=CUR[t.currency]||CUR.SAR,fc=CUR[t.feeCurrency]||CUR.YER;
   const hasFee=t.fee!==''&&t.fee!=null;
@@ -4173,9 +4179,12 @@ function rFormal(t,s){const p=P(t,s);return `<div class="rf"><div class="rf-band
  <div class="rf-note">${esc(s.foot)}</div></div>`;}
 function sampleT(){return T[0]||{company:curCo(),no:6097968,date:today(),amount:1000,currency:'SAR',words:'ألف ريال سعودي',fee:200,feeCurrency:'YER',recipient:'اسم المستلم',sender:'اسم المرسل',destination:S.dest,employee:(S.employees[0]||{}).name||'',status:'unpaid',createdAt:new Date().toISOString()};}
 function renderGallery(){const sel=draftSet.tpl||'band';const st=Object.assign({},S,draftSet);const t=sampleT();
-  $('#tplGallery').innerHTML=TPLS.map(x=>`<button type="button" class="tpl-opt" data-tpl="${x.id}" aria-pressed="${x.id===sel}"><div class="mini"><div>${receipt(t,st,x.id)}</div></div><b>${x.n}</b><span>${x.d}</span></button>`).join('');
+  const hid=S.tplHidden||[];
+  $('#tplGallery').innerHTML=TV().map(x=>`<div class="tpl-cell"><button type="button" class="tpl-opt" data-tpl="${x.id}" aria-pressed="${x.id===sel}"><div class="mini"><div>${receipt(t,st,x.id)}</div></div><b>${x.n}</b><span>${x.d}</span></button><button type="button" class="tpl-del" data-tpldel="${x.id}" title="حذف هذا النموذج" aria-label="حذف نموذج ${esc(x.n)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button></div>`).join('');
+  let tb=$('#tplBar');if(!tb){tb=document.createElement('div');tb.id='tplBar';tb.className='tpl-bar';$('#tplGallery').before(tb);}
+  tb.innerHTML=`<label class="tpl-qr"><input type="checkbox" id="qrOn" ${S.qrOn?'checked':''}> إظهار رمز QR للتحقق على السند</label>${hid.length?`<span>محذوف ${hid.length} نموذج: ${hid.map(id=>{const x=TPLS.find(z=>z.id===id);return x?`<button type="button" class="linkbtn" data-tplres="${id}">استعادة «${esc(x.n)}»</button>`:'';}).join(' ')}</span>`:''}`;
   document.querySelectorAll('#tplGallery .mini').forEach(m=>{const el=m.firstElementChild.firstElementChild;const k=Math.min((m.clientWidth-8)/el.offsetWidth,(m.clientHeight-8)/el.offsetHeight);m.firstElementChild.style.transform=`scale(${k})`;});}
-function tplOptions(){$('#tplSel').innerHTML=TPLS.map(x=>`<option value="${x.id}">${x.n}</option>`).join('');$('#tplSel').value=viewTpl();}
+function tplOptions(){$('#tplSel').innerHTML=TV().map(x=>`<option value="${x.id}">${x.n}</option>`).join('');$('#tplSel').value=viewTpl();}
 
 
 /* ---------- font pairings ---------- */
@@ -4197,8 +4206,8 @@ function renderFonts(){const sel=draftSet.font||'modern';FONTS.forEach(loadFontC
 
 
 /* ---------- version & live updates ---------- */
-const APP_VERSION='3.7.0',APP_DATE='2026-11-27';
-const APP_NOTES=['رمز تحقق QR على كل سند مع رمز مطبوع، وشاشة «التحقق من سند» لكشف السند المعدّل أو المزوّر','بحث سريع وأوامر بـ Ctrl+K: رقم الحوالة، المرسل، المستلم، الجوال','«الرقابة الذاتية» في الرئيسية: حوالات لم تُسلَّم منذ 3 أيام، تكرار محتمل، أسماء متشابهة، حوالات بلا جوال','«أرسل سابقاً إلى»: عند كتابة اسم المرسل تظهر مستلموه السابقون لتعبئتهم بضغطة','لكل شركة شكل سند افتراضي خاص بها يتغيّر مع الشعار عند تغيير الشركة','تواقيع بخط يد متصل بدل الاسم المكتوب','أختام جديدة للوكيل مستوحاة من شعار كل شركة (حزمي، الكريمي، القطيبي، المريسي، النجم، يمن اكسبرس) بخلفية شفافة وأثر حبر','تواقيع جاهزة شفافة للموظفين في النسخة المباشرة','«إنشاء توقيع» لكل موظف: كتابة الاسم بخطوط يدوية عربية وإنجليزية، أو الرسم باليد، مع اختيار لون الحبر','نسخ احتياطي تلقائي: تختار المجلد مرة واحدة، ويُرسل النظام نسخة إليه في كل مرة تفتحه مع رسالة بتاريخ التحديث','استرجاع البيانات من ملف نسخة احتياطية مع معاينة قبل الاسترجاع','قفل سريع برمز اختياري بعد فترة عدم استخدام','«سجل العمليات»: من أنشأ وعدّل وغيّر الحالة وحذف، مع سبب الحذف واستعادة المحذوف','«الإقفال اليومي» لكل شركة وعملة مع تصدير PDF و Excel','مشاركة السند عبر واتساب برسالة جاهزة للمستلم','«النسخ السابقة»: نسخة يومية تلقائية وقبل كل حذف أو استيراد، واسترجاع بضغطة مع معاينة','عند أول دخول يسألك النظام أين تحفظ بياناتك، ثم يحفظ تلقائياً','ملف حفظ خفيف (بيانات-الحوالات.json) للنسخة المباشرة على الموقع','هوية «الحيوي»: أخضر غابي مع ليموني وزوايا دائرية','اختيار خط النظام من 8 خطوط عربية','3 أشكال سندات جديدة: التذكرة، العصري، تتبّع الحالة','نشر مباشر عبر GitHub و Vercel مع تنبيه عند صدور تحديث','رقم الإصدار يظهر في الشريط العلوي وفي «عن النظام»'];
+const APP_VERSION='3.7.1',APP_DATE='2026-11-27';
+const APP_NOTES=['حذف نماذج السندات التي لا تحتاجها من الإعدادات، مع إمكانية استعادتها','رمز QR مخفي افتراضياً، ويمكن إظهاره من الإعدادات','رمز تحقق QR على كل سند مع رمز مطبوع، وشاشة «التحقق من سند» لكشف السند المعدّل أو المزوّر','بحث سريع وأوامر بـ Ctrl+K: رقم الحوالة، المرسل، المستلم، الجوال','«الرقابة الذاتية» في الرئيسية: حوالات لم تُسلَّم منذ 3 أيام، تكرار محتمل، أسماء متشابهة، حوالات بلا جوال','«أرسل سابقاً إلى»: عند كتابة اسم المرسل تظهر مستلموه السابقون لتعبئتهم بضغطة','لكل شركة شكل سند افتراضي خاص بها يتغيّر مع الشعار عند تغيير الشركة','تواقيع بخط يد متصل بدل الاسم المكتوب','أختام جديدة للوكيل مستوحاة من شعار كل شركة (حزمي، الكريمي، القطيبي، المريسي، النجم، يمن اكسبرس) بخلفية شفافة وأثر حبر','تواقيع جاهزة شفافة للموظفين في النسخة المباشرة','«إنشاء توقيع» لكل موظف: كتابة الاسم بخطوط يدوية عربية وإنجليزية، أو الرسم باليد، مع اختيار لون الحبر','نسخ احتياطي تلقائي: تختار المجلد مرة واحدة، ويُرسل النظام نسخة إليه في كل مرة تفتحه مع رسالة بتاريخ التحديث','استرجاع البيانات من ملف نسخة احتياطية مع معاينة قبل الاسترجاع','قفل سريع برمز اختياري بعد فترة عدم استخدام','«سجل العمليات»: من أنشأ وعدّل وغيّر الحالة وحذف، مع سبب الحذف واستعادة المحذوف','«الإقفال اليومي» لكل شركة وعملة مع تصدير PDF و Excel','مشاركة السند عبر واتساب برسالة جاهزة للمستلم','«النسخ السابقة»: نسخة يومية تلقائية وقبل كل حذف أو استيراد، واسترجاع بضغطة مع معاينة','عند أول دخول يسألك النظام أين تحفظ بياناتك، ثم يحفظ تلقائياً','ملف حفظ خفيف (بيانات-الحوالات.json) للنسخة المباشرة على الموقع','هوية «الحيوي»: أخضر غابي مع ليموني وزوايا دائرية','اختيار خط النظام من 8 خطوط عربية','3 أشكال سندات جديدة: التذكرة، العصري، تتبّع الحالة','نشر مباشر عبر GitHub و Vercel مع تنبيه عند صدور تحديث','رقم الإصدار يظهر في الشريط العلوي وفي «عن النظام»'];
 const HOSTED=/^https?:$/.test(location.protocol);
 try{const hv=document.getElementById('hdrVer');if(hv)hv.textContent='v'+APP_VERSION;}catch(e){}
 function renderAbout(){if(!$('#aboutVer'))return;$('#aboutVer').textContent='v'+APP_VERSION;$('#aboutDate').textContent=APP_DATE;
@@ -4348,7 +4357,7 @@ function fillSettings(){draftSet=JSON.parse(JSON.stringify(S));
 function thumb(ref){const s=imgSrc(ref);return s?`<img src="${esc(s)}" alt="">`:'<span class="hint">لا توجد صورة</span>';}
 function renderSetImgs(){$('#th-stamp').innerHTML=thumb(draftSet.stamp);const c=draftSet.companies[coIdx];if(c){$('#th-logo').innerHTML=thumb(c.logo);$('#th-costamp').innerHTML=thumb(c.stamp);}}
 let coIdx=0;
-function renderCoEd(){$('#co-tpl').innerHTML='<option value="">الشكل الافتراضي العام</option>'+TPLS.map(x=>`<option value="${x.id}">${x.n}</option>`).join('');const L=draftSet.companies;coIdx=Math.min(coIdx,L.length-1);const c=L[coIdx];
+function renderCoEd(){$('#co-tpl').innerHTML='<option value="">الشكل الافتراضي العام</option>'+TV().map(x=>`<option value="${x.id}">${x.n}</option>`).join('');const L=draftSet.companies;coIdx=Math.min(coIdx,L.length-1);const c=L[coIdx];
   $('#coTabs').innerHTML=L.map((x,i)=>`<button type="button" class="co-tab" data-coi="${i}" aria-pressed="${i===coIdx}"><i style="background:${esc(x.color||'#999')}"></i>${esc(x.name||'بدون اسم')}</button>`).join('');
   document.querySelectorAll('[data-cof]').forEach(el=>{el.value=c[el.dataset.cof]??'';});renderSetImgs();}
 $('#coTabs').addEventListener('click',e=>{const b=e.target.closest('[data-coi]');if(b){coIdx=+b.dataset.coi;renderCoEd();}});
@@ -4446,7 +4455,7 @@ $('#bkFile').addEventListener('change',async()=>{const f=$('#bkFile').files[0];i
 /* ---------- shell ---------- */
 
 
-function renderHome(){if(!$('#kpis'))return;try{renderAudit();}catch(e){}const td=today();const L=T.filter(t=>t.date===td);
+function renderHome(){if(!$('#kpis'))return;{const hv=$('#hVerify');if(hv)hv.hidden=!S.qrOn;}try{renderAudit();}catch(e){}const td=today();const L=T.filter(t=>t.date===td);
   const sum={};L.forEach(t=>{sum[t.currency]=(sum[t.currency]||0)+(+t.amount||0)});
   const fees={};L.forEach(t=>{if(t.fee!==''&&t.fee!=null)fees[t.feeCurrency]=(fees[t.feeCurrency]||0)+(+t.fee||0)});
   const pend=T.filter(t=>(t.status||'unpaid')!=='paid').length;
@@ -4615,6 +4624,14 @@ function openCk(){if($('#ck'))return;const d=document.createElement('div');d.cla
   d.addEventListener('click',e=>{const b=e.target.closest('[data-cki]');if(b)run(+b.dataset.cki);else if(e.target===d)close();});draw();$('#ckIn').focus();}
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){const g=document.getElementById('fbGate');if(g&&!g.hidden)return;e.preventDefault();openCk();}});
 document.addEventListener('click',e=>{if(e.target.closest('#hCk'))openCk();if(e.target.closest('#hVerify'))verifyModal();});
+
+
+async function setTplPrefs(patch){const N=Object.assign({},S,patch);await saveSettings(N);if(draftSet)Object.assign(draftSet,patch);renderGallery();tplOptions();try{renderCoEd();}catch(e){}updatePreview();}
+document.addEventListener('click',async e=>{const d=e.target.closest('[data-tpldel]');if(d){e.stopPropagation();const id=d.dataset.tpldel;const x=TPLS.find(z=>z.id===id);
+    if(TV().length<=1){toast('لا يمكن حذف آخر نموذج');return;}
+    await setTplPrefs({tplHidden:[...new Set([...(S.tplHidden||[]),id])]});logEvt('settings',null,'حذف نموذج السند «'+x.n+'»');toast('حُذف نموذج «'+x.n+'». يمكنك استعادته من أعلى قائمة النماذج');return;}
+  const r=e.target.closest('[data-tplres]');if(r){const x=TPLS.find(z=>z.id===r.dataset.tplres);await setTplPrefs({tplHidden:(S.tplHidden||[]).filter(z=>z!==r.dataset.tplres)});logEvt('settings',null,'استعادة نموذج السند «'+(x?x.n:'')+'»');toast('تمت استعادة النموذج');}});
+document.addEventListener('change',async e=>{if(e.target.id==='qrOn'){await setTplPrefs({qrOn:e.target.checked});toast(e.target.checked?'سيظهر رمز QR على السندات':'أُخفي رمز QR من السندات');}});
 
 const PT={home:['لوحة التحكم','الرئيسية'],new:['العمليات','حوالة جديدة'],log:['السجلات','سجل الحوالات'],close:['التقارير','الإقفال اليومي'],set:['النظام','الإعدادات']};
 function showTab(n){$('#pTitle').textContent=PT[n][1];$('#pEyebrow').textContent=PT[n][0];document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===n));
